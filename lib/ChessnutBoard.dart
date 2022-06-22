@@ -27,8 +27,8 @@ class ChessnutBoard {
   Future<void> init(ChessnutCommunicationClient client) async {
     _client = client;
     _client.receiveStream.listen(_handleInputStream);
-    _inputStreamController = new StreamController<ChessnutMessage>();
-    _boardUpdateStreamController = new StreamController<Map<String, List<int>>>();
+    _inputStreamController = StreamController<ChessnutMessage>();
+    _boardUpdateStreamController = StreamController<Map<String, String>>();
     _inputStream = _inputStreamController.stream.asBroadcastStream();
     _boardUpdateStream = _boardUpdateStreamController.stream.asBroadcastStream();
 

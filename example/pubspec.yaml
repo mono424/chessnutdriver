@@ -26,6 +26,9 @@ dependencies:
   chessnutdriver: 
     path: ../
   usb_serial: ^0.4.0
+  flutter_reactive_ble: ^5.0.2
+  permission_handler: ^10.0.0
+  provider: ^6.0.3
 
 
   # The following adds the Cupertino Icons font to your application.
