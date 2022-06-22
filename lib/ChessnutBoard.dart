@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chessnutdriver/ChessnutCommunicationClient.dart';
+import 'package:chessnutdriver/ChessnutCommunicationType.dart';
 import 'package:chessnutdriver/ChessnutMessage.dart';
 import 'package:chessnutdriver/ChessnutProtocol.dart';
-import 'package:chessnutdriver/IntegrityCheckType.dart';
 import 'package:chessnutdriver/LEDPattern.dart';
 
 class ChessnutBoard {
@@ -13,16 +13,14 @@ class ChessnutBoard {
   StreamController _inputStreamController;
   StreamController _boardUpdateStreamController;
   Stream<ChessnutMessage> _inputStream;
-  Stream<Map<String, List<int>>> _boardUpdateStream;
+  Stream<Map<String, String>> _boardUpdateStream;
   List<int> _buffer;
 
-  Map<String, List<int>> _currBoard = Map.fromEntries(ChessnutProtocol.squares.map((e) => MapEntry(e, ChessnutProtocol.emptyFieldId)));
+  Map<String, String> _currBoard = Map.fromEntries(ChessnutProtocol.squares.map((e) => MapEntry(e, ChessnutProtocol.pieces[0])));
 
-  Map<String, List<int>> get currBoard {
+  Map<String, String> get currBoard {
     return _currBoard;
   }
-
-  List<Map<String, List<int>>> _lastBoards = [];
 
   ChessnutBoard();
 
@@ -37,49 +35,8 @@ class ChessnutBoard {
     getInputStream().map(createBoardMap).listen(_newBoardState);
   }
 
-  void _newBoardState(Map<String, List<int>> state) {
-    // PieceId Whitelist
-    if (pieceIdWhitelist != null && pieceIdWhitelist.length > 0) {
-      state = state.map((key, value) {
-        if (pieceIdWhitelist.any((e) => ChessnutProtocol.equalId(e, value))) {
-          return MapEntry(key, value);
-        }
-        return MapEntry(key, ChessnutProtocol.emptyFieldId);
-      });
-    }
-
-    // Integrity Checks
-    int messagesNeeded = 1 + _incoomingIntegrityChecks;
-    _lastBoards.insert(0, state);
-    if (_lastBoards.length < messagesNeeded) return;
-
-    _lastBoards = _lastBoards.sublist(0, messagesNeeded);
-
-    if (incoomingIntegrityCheckType == IntegrityCheckType.cell) {
-      _currBoard = _currBoard.map((key, value) {
-        List<int> potentialNewValue = _lastBoards.first[key];
-        if (_lastBoards.every((e) => ChessnutProtocol.equalId(e[key], potentialNewValue))) {
-          return MapEntry(key, potentialNewValue);
-        }
-        return MapEntry(key, value);
-      });
-    } else {
-      if (checkStatesAreEqual(_lastBoards)) {
-        _currBoard = _lastBoards.first;
-      }
-    }
-
+  void _newBoardState(Map<String, String> state) {
     _boardUpdateStreamController.add(_currBoard);
-  }
-
-  bool checkStatesAreEqual(List<Map<String, List<int>>> states) {
-    Map<String, List<int>> first = _lastBoards.first;
-    for (var entry in first.entries) {
-      if (!states.every((e) => ChessnutProtocol.equalId(e[entry.key], entry.value))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   bool _isWorking = false;
@@ -92,24 +49,19 @@ class ChessnutBoard {
       _buffer.addAll(chunk);
 
     if (_isWorking == true) return;
-    while(_buffer.length >= 384) {
+    while(_buffer.length > 0) {
       _isWorking = true;
       try {
         _buffer = skipToNextStart(0, _buffer);
         ChessnutMessage message = ChessnutMessage.parse(_buffer);
         _inputStreamController.add(message);
         _buffer.removeRange(0, message.length);
-        //print("Received valid message");
       } on ChessnutInvalidMessageException catch (e) {
         _buffer = skipToNextStart(0, _buffer);
         _inputStreamController.addError(e);
-      } on ChessnutInvalidMessageLengthException catch (e) {
-        _buffer = skipToNextStart(1, _buffer);
-        _inputStreamController.addError(e);
       } on ChessnutMessageTooShortException catch (_) {
-        //_inputStreamController.addError(e);
+        break;
       } catch (err) {
-        //print("Unknown parse-error: " + err.toString());
         _inputStreamController.addError(err);
       }
     }
@@ -118,25 +70,34 @@ class ChessnutBoard {
 
   List<int> skipToNextStart(int start, List<int> buffer) {
     int index = start;
-    for (; index < buffer.length; index++) {
-      if ((buffer[index] & 127) == 58) break;
+    for (; index < (buffer.length - 1); index++) {
+      if (_isMessageStart(buffer, index)) break;
     }
-    if (index == buffer.length) return [];
+    if (index == (buffer.length - 1)) return [];
     return buffer.sublist(index, buffer.length - index);
+  }
+
+  bool _isMessageStart(List<int> buffer, int index) {
+    if (_client.type == ChessnutCommunicationType.usb) {
+      return (buffer[index] == 0x01 && buffer[index + 1] == 0x3D);
+    } else if (_client.type == ChessnutCommunicationType.bluetooth) {
+      return (buffer[index] == 0x01 && buffer[index + 1] == 0x24);
+    }
+    throw Exception("Invalid communication type");
   }
 
   Stream<ChessnutMessage> getInputStream() {
     return _inputStream;
   }
 
-  Stream<Map<String, List<int>>> getBoardUpdateStream() {
+  Stream<Map<String, String>> getBoardUpdateStream() {
     return _boardUpdateStream;
   }
 
-  Map<String, List<int>> createBoardMap(ChessnutMessage message) {
-    Map<String, List<int>> map = Map<String, List<int>>();
-    for (var i = 0; i < message.items.length; i++) {
-      map[ChessnutProtocol.squares[i]] = message.items[i];
+  Map<String, String> createBoardMap(ChessnutMessage message) {
+    Map<String, String> map = {};
+    for (var i = 0; i < message.pieces.length; i++) {
+      map[ChessnutProtocol.squares[i]] = ChessnutProtocol.pieces[message.pieces[i]];
     }
     return map;
   }
@@ -147,10 +108,6 @@ class ChessnutBoard {
 
   Future<void> _send(Uint8List message) async {
     await _client.send(message);
-    for (var i = 0; i < _redundantOutputMessages; i++) {
-      await Future.delayed(redudantOutputMessageDelay);
-      await _client.send(message);
-    }
   }
   
 }

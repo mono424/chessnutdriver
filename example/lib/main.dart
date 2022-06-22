@@ -1,5 +1,6 @@
-import 'package:chessnutdriver/chessnutBoard.dart';
-import 'package:chessnutdriver/chessnutCommunicationClient.dart';
+import 'package:chessnutdriver/ChessnutBoard.dart';
+import 'package:chessnutdriver/ChessnutCommunicationClient.dart';
+import 'package:chessnutdriver/ChessnutCommunicationType.dart';
 import 'package:chessnutdriver/LEDPattern.dart';
 import 'package:flutter/material.dart';
 import 'package:usb_serial/usb_serial.dart';
@@ -29,7 +30,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  chessnutBoard connectedBoard;
+  ChessnutBoard connectedBoard;
 
   void connect() async {
     List<UsbDevice> devices = await UsbSerial.listDevices();
@@ -47,12 +48,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
 	  usbDevice.setPortParameters(38400, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
-    chessnutCommunicationClient client = chessnutCommunicationClient(usbDevice.write);
+    ChessnutCommunicationClient client = ChessnutCommunicationClient(ChessnutCommunicationType.usb, usbDevice.write);
     usbDevice.inputStream.listen(client.handleReceive);
     
     if (dgtDevices.length > 0) {
       // connect to board and initialize
-      chessnutBoard nBoard = new chessnutBoard();
+      ChessnutBoard nBoard = new ChessnutBoard();
       await nBoard.init(client);
       print("chessnutBoard connected");
 
@@ -63,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Map<String, List<int>> lastData;
+  Map<String, String> lastData;
 
   LEDPattern ledpattern = LEDPattern();
 
@@ -90,17 +91,17 @@ class _MyHomePageState extends State<MyHomePage> {
           )),
           Center( child: StreamBuilder(
             stream: connectedBoard?.getBoardUpdateStream(),
-            builder: (context, AsyncSnapshot<Map<String, List<int>>> snapshot) {
+            builder: (context, AsyncSnapshot<Map<String, String>> snapshot) {
               if (!snapshot.hasData && lastData == null) return Text("- no data -");
 
-              Map<String, List<int>> fieldUpdate = snapshot.data ?? lastData;
+              Map<String, String> fieldUpdate = snapshot.data ?? lastData;
               lastData = fieldUpdate;
               List<Widget> rows = [];
               
               for (var i = 0; i < 8; i++) {
                 List<Widget> cells = [];
                 for (var j = 0; j < 8; j++) {
-                    MapEntry<String, List<int>> entry = fieldUpdate.entries.toList()[i * 8 + j];
+                    MapEntry<String, String> entry = fieldUpdate.entries.toList()[i * 8 + j];
                     cells.add(
                       TextButton(
                         onPressed: () => toggleLed(entry.key),
@@ -122,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(entry.key, style: TextStyle(color: Colors.white)),
-                                Text("[" + entry.value.join(", ") + "]", style: TextStyle(color: Colors.white, fontSize: 8)),
+                                Text(entry.value, style: TextStyle(color: Colors.white, fontSize: 8)),
                               ],
                             )
                           ),

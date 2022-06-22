@@ -1,3 +1,0 @@
-enum IntegrityCheckType {
-  board, cell
-}
