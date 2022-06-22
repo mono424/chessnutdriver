@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - usb_serial (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - usb_serial (from `.symlinks/plugins/usb_serial/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  usb_serial:
+    :path: ".symlinks/plugins/usb_serial/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
+  usb_serial: 59a00535e5c8656b188c187a2cfd95017585c41e
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.10.1
