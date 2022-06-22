@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chessnutdriver/ChessnutBoard.dart';
@@ -65,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   ChessnutBoard connectedBoard;
   Stream<ConnectionStateUpdate> boardBtStream;
+  StreamSubscription<List<int>> boardBtInputStream;
   bool loading = false;
 
   void connectBle() async {
@@ -108,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
 
         ChessnutCommunicationClient chessnutCommuniChessnutCommunicationClient = ChessnutCommunicationClient(ChessnutCommunicationType.bluetooth, (v) => flutterReactiveBle.writeCharacteristicWithResponse(write, value: v));
-        flutterReactiveBle
+        boardBtInputStream = flutterReactiveBle
             .subscribeToCharacteristic(read)
             .listen((list) {
               print(list);
@@ -225,7 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(entry.key, style: TextStyle(color: Colors.white)),
-                                Text(entry.value, style: TextStyle(color: Colors.white, fontSize: 8)),
+                                Text(entry.value ?? ".", style: TextStyle(color: Colors.white, fontSize: 8)),
                               ],
                             )
                           ),

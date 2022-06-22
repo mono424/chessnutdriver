@@ -33,9 +33,12 @@ class ChessnutBoard {
     _boardUpdateStream = _boardUpdateStreamController.stream.asBroadcastStream();
 
     getInputStream().map(createBoardMap).listen(_newBoardState);
+
+    _send(Uint8List.fromList([0x21, 0x01, 0x00]));
   }
 
   void _newBoardState(Map<String, String> state) {
+    _currBoard = state;
     _boardUpdateStreamController.add(_currBoard);
   }
 

@@ -1,6 +1,6 @@
 abstract class ChessnutProtocol {
   // Pieces
-  static const List<String> pieces = [null, 'q' 'k' 'b' 'p' 'n' 'R' 'P' 'r' 'B' 'N' 'Q' 'K'];
+  static const List<String> pieces = [null, 'q', 'k', 'b', 'p', 'n', 'R', 'P', 'r', 'B', 'N', 'Q', 'K'];
 
   // Squares
   static bool reverseBoardOrientation = false;
