@@ -10,31 +10,6 @@ import 'package:chessnutdriver/LEDPattern.dart';
 class ChessnutBoard {
   
   ChessnutCommunicationClient _client;
-  
-  Duration redudantOutputMessageDelay = Duration(milliseconds: 100);
-  int _redundantOutputMessages = 2;
-  int _incoomingIntegrityChecks = 2;
-  IntegrityCheckType incoomingIntegrityCheckType = IntegrityCheckType.board;
-  List<List<int>> pieceIdWhitelist = [];
-
-  void set redundantOutputMessages(value) {
-    if (value < 0) throw Exception("To small value, atleast 0");
-    _redundantOutputMessages = value;
-  }
-
-  void set incoomingIntegrityChecks(value) {
-    if (value < 0) throw Exception("To small value, atleast 0");
-    _incoomingIntegrityChecks = value;
-  }
-
-  int get redundantOutputMessages {
-    return _redundantOutputMessages;
-  }
-
-  int get incoomingIntegrityChecks {
-    return _incoomingIntegrityChecks;
-  }
-
   StreamController _inputStreamController;
   StreamController _boardUpdateStreamController;
   Stream<ChessnutMessage> _inputStream;
