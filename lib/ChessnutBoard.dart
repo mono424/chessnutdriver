@@ -33,7 +33,7 @@ class ChessnutBoard {
     _inputStream = _inputStreamController.stream.asBroadcastStream();
     _boardUpdateStream = _boardUpdateStreamController.stream.asBroadcastStream();
 
-    getInputStream().map(createBoardMap).listen(_newBoardState);
+    getInputStream().map(_createBoardMap).listen(_newBoardState);
 
     _send(Uint8List.fromList([0x21, 0x01, 0x00]));
   }
@@ -97,7 +97,7 @@ class ChessnutBoard {
     return _boardUpdateStream;
   }
 
-  Map<String, String> createBoardMap(ChessnutMessage message) {
+  Map<String, String> _createBoardMap(ChessnutMessage message) {
     Map<String, String> map = {};
     for (var i = 0; i < message.pieces.length; i++) {
       map[ChessnutProtocol.squares[i]] = ChessnutProtocol.pieces[message.pieces[i]];

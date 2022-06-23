@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final bleWriteCharacteristic = Uuid.parse("1B7E8272-2877-41C3-B46E-CF057C562023");
 
   ChessnutBoard connectedBoard;
-  Stream<ConnectionStateUpdate> boardBtStream;
+  StreamSubscription<ConnectionStateUpdate> boardBtStream;
   StreamSubscription<List<int>> boardBtInputStreamA;
   StreamSubscription<List<int>> boardBtInputStreamB;
   bool loading = false;
@@ -81,12 +81,13 @@ class _MyHomePageState extends State<MyHomePage> {
       loading = true;
     });
 
-    flutterReactiveBle.connectToDevice(
+    boardBtStream = flutterReactiveBle.connectToDevice(
       id: deviceId,
       connectionTimeout: const Duration(seconds: 5),
     ).listen((e) async {
       if (e.connectionState == DeviceConnectionState.connected) {
         List<DiscoveredService> services = await flutterReactiveBle.discoverServices(e.deviceId);
+        await flutterReactiveBle.requestMtu(deviceId: deviceId, mtu: 247); // Important: Increase MTU
 
         QualifiedCharacteristic readA;
         QualifiedCharacteristic readB;
@@ -190,6 +191,18 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
+  void disconnectBle() {
+    boardBtInputStreamA.cancel();
+    boardBtInputStreamB.cancel();
+    boardBtStream.cancel();
+    setState(() {
+      boardBtInputStreamA = null;
+      boardBtInputStreamB = null;
+      boardBtStream = null;
+      connectedBoard = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -206,8 +219,8 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: !loading && connectedBoard == null ? connect : null,
           )),
           Center(child: TextButton(
-            child: Text(connectedBoard == null ? "Try to connect to board (BLE)" : "Connected"),
-            onPressed: !loading && connectedBoard == null ? connectBle : null,
+            child: Text(connectedBoard == null ? "Try to connect to board (BLE)" : (boardBtStream != null ? "Disconnect" : "")),
+            onPressed: !loading && connectedBoard == null ? connectBle : (boardBtStream != null ? disconnectBle : null),
           )),
           Center( child: StreamBuilder(
             stream: connectedBoard?.getBoardUpdateStream(),
