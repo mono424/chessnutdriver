@@ -35,7 +35,9 @@ class ChessnutBoard {
 
     getInputStream().map(_createBoardMap).listen(_newBoardState);
 
+    Future<void> ack = getAckFuture();
     _send(Uint8List.fromList([0x21, 0x01, 0x00]));
+    await ack;
   }
 
   void _newBoardState(Map<String, String> state) {
@@ -106,11 +108,25 @@ class ChessnutBoard {
   }
 
   Future<void> setLEDs(LEDPattern pattern) async {
+    Future<void> ack = getAckFuture();
     await _send(Uint8List.fromList([0x0A, 0x08, ...pattern.pattern]));
+    await ack;
   }
 
   Future<void> _send(Uint8List message) async {
     await _client.send(message);
+  }
+
+  Future<void> getAckFuture() {
+    return _client.waitForAck ? _client.ackStream.firstWhere((e) => equals(e.toList(), [0x23, 0x01, 0x00])).timeout(_client.ackTimeout) : Future.value();
+  }
+
+  bool equals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
   
 }
