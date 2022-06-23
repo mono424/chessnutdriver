@@ -6,6 +6,7 @@ import 'package:chessnutdriver/ChessnutCommunicationType.dart';
 import 'package:chessnutdriver/ChessnutMessage.dart';
 import 'package:chessnutdriver/ChessnutProtocol.dart';
 import 'package:chessnutdriver/LEDPattern.dart';
+import 'package:synchronized/synchronized.dart';
 
 class ChessnutBoard {
   
@@ -42,33 +43,32 @@ class ChessnutBoard {
     _boardUpdateStreamController.add(_currBoard);
   }
 
-  bool _isWorking = false;
-  void _handleInputStream(Uint8List rawChunk) {
-    List<int> chunk = rawChunk.toList();
+  var lock = new Lock();
+  void _handleInputStream(Uint8List rawChunk) async {
+    await lock.synchronized(() async {
+      List<int> chunk = rawChunk.toList();
 
-    if (_buffer == null)
-      _buffer = chunk.toList();
-    else
-      _buffer.addAll(chunk);
+      if (_buffer == null)
+        _buffer = chunk.toList();
+      else
+        _buffer.addAll(chunk);
 
-    if (_isWorking == true) return;
-    while(_buffer.length > 0) {
-      _isWorking = true;
-      try {
-        _buffer = skipToNextStart(0, _buffer);
-        ChessnutMessage message = ChessnutMessage.parse(_buffer);
-        _inputStreamController.add(message);
-        _buffer.removeRange(0, message.length);
-      } on ChessnutInvalidMessageException catch (e) {
-        _buffer = skipToNextStart(0, _buffer);
-        _inputStreamController.addError(e);
-      } on ChessnutMessageTooShortException catch (_) {
-        break;
-      } catch (err) {
-        _inputStreamController.addError(err);
+      while(_buffer.length > 0) {
+        try {
+          _buffer = skipToNextStart(0, _buffer);
+          ChessnutMessage message = ChessnutMessage.parse(_buffer);
+          _inputStreamController.add(message);
+          _buffer.removeRange(0, message.length);
+        } on ChessnutInvalidMessageException catch (e) {
+          _buffer = skipToNextStart(0, _buffer);
+          _inputStreamController.addError(e);
+        } on ChessnutMessageTooShortException catch (_) {
+          break;
+        } catch (err) {
+          _inputStreamController.addError(err);
+        }
       }
-    }
-    _isWorking = false;
+    });
   }
 
   List<int> skipToNextStart(int start, List<int> buffer) {
@@ -106,7 +106,7 @@ class ChessnutBoard {
   }
 
   Future<void> setLEDs(LEDPattern pattern) async {
-    await _send(Uint8List.fromList(pattern.pattern));
+    await _send(Uint8List.fromList([0x0A, 0x08, ...pattern.pattern]));
   }
 
   Future<void> _send(Uint8List message) async {

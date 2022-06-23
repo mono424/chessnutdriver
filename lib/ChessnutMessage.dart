@@ -11,7 +11,7 @@ class ChessnutMessage {
     for (var i = 2; i < 34; i++) {
       _pieces.add(message[i] & 15);
       _pieces.add(message[i] >> 4);
-    }  
+    }
   }
 
   List<int> get pieces {

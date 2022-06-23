@@ -61,12 +61,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final flutterReactiveBle = FlutterReactiveBle();
 
-  final bleReadCharacteristic = Uuid.parse("1B7E8262-2877-41C3-B46E-CF057C562023");
+  final bleReadCharacteristicA = Uuid.parse("1B7E8262-2877-41C3-B46E-CF057C562023");
+  final bleReadCharacteristicB = Uuid.parse("1B7E8273-2877-41C3-B46E-CF057C562023");
   final bleWriteCharacteristic = Uuid.parse("1B7E8272-2877-41C3-B46E-CF057C562023");
 
   ChessnutBoard connectedBoard;
   Stream<ConnectionStateUpdate> boardBtStream;
-  StreamSubscription<List<int>> boardBtInputStream;
+  StreamSubscription<List<int>> boardBtInputStreamA;
+  StreamSubscription<List<int>> boardBtInputStreamB;
   bool loading = false;
 
   void connectBle() async {
@@ -78,23 +80,31 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       loading = true;
     });
+
     flutterReactiveBle.connectToDevice(
       id: deviceId,
       connectionTimeout: const Duration(seconds: 5),
     ).listen((e) async {
       if (e.connectionState == DeviceConnectionState.connected) {
-
         List<DiscoveredService> services = await flutterReactiveBle.discoverServices(e.deviceId);
 
-
-        QualifiedCharacteristic read;
+        QualifiedCharacteristic readA;
+        QualifiedCharacteristic readB;
         QualifiedCharacteristic write;
         for (var service in services) {
           for (var characteristicId in service.characteristicIds) {
-            if (characteristicId == bleReadCharacteristic) {
-              read = QualifiedCharacteristic(
+            if (characteristicId == bleReadCharacteristicA) {
+              readA = QualifiedCharacteristic(
                 serviceId: service.serviceId,
-                characteristicId: bleReadCharacteristic,
+                characteristicId: bleReadCharacteristicA,
+                deviceId: e.deviceId
+              );
+            }
+
+            if (characteristicId == bleReadCharacteristicB) {
+              readB = QualifiedCharacteristic(
+                serviceId: service.serviceId,
+                characteristicId: bleReadCharacteristicB,
                 deviceId: e.deviceId
               );
             }
@@ -110,11 +120,17 @@ class _MyHomePageState extends State<MyHomePage> {
         }
 
         ChessnutCommunicationClient chessnutCommuniChessnutCommunicationClient = ChessnutCommunicationClient(ChessnutCommunicationType.bluetooth, (v) => flutterReactiveBle.writeCharacteristicWithResponse(write, value: v));
-        boardBtInputStream = flutterReactiveBle
-            .subscribeToCharacteristic(read)
+        boardBtInputStreamA = flutterReactiveBle
+            .subscribeToCharacteristic(readA)
             .listen((list) {
               print(list);
               chessnutCommuniChessnutCommunicationClient.handleReceive(Uint8List.fromList(list));
+            });
+        boardBtInputStreamB = flutterReactiveBle
+            .subscribeToCharacteristic(readB)
+            .listen((list) {
+              print(list);
+              // chessnutCommuniChessnutCommunicationClient.handleReceive(Uint8List.fromList(list));
             });
           
 

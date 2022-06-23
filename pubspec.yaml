@@ -6,3 +6,6 @@ homepage: https://khad.im
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  synchronized: ^3.0.0+2
