@@ -1,0 +1,3 @@
+enum ChessnutCommunicationType {
+  usb, bluetooth
+}
