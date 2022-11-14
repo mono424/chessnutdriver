@@ -1,6 +1,6 @@
-export 'ChessnutBoard.dart';
-export 'LedPattern.dart';
-export 'ChessnutCommunicationClient.dart';
-export 'ChessnutCommunicationType.dart';
-export 'ChessnutMessage.dart';
-export 'ChessnutProtocol.dart';
+export 'chessnut_board.dart';
+export 'led_pattern.dart';
+export 'chessnut_communication_client.dart';
+export 'chessnut_communication_type.dart';
+export 'chessnut_message.dart';
+export 'chessnut_protocol.dart';

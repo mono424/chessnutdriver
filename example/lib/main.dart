@@ -1,11 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:chessnutdriver/ChessnutBoard.dart';
-import 'package:chessnutdriver/ChessnutCommunicationClient.dart';
-import 'package:chessnutdriver/ChessnutCommunicationType.dart';
-import 'package:chessnutdriver/ChessnutProtocol.dart';
-import 'package:chessnutdriver/LEDPattern.dart';
+import 'package:chessnutdriver/chessnutdriver.dart';
 import 'package:example/ble_scanner.dart';
 import 'package:example/device_list_screen.dart';
 import 'package:flutter/material.dart';
