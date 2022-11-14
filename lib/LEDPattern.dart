@@ -4,7 +4,7 @@ class LEDPattern {
 
   List<bool> _pattern = List.filled(64, false);
 
-  LEDPattern([List<bool> pattern]) {
+  LEDPattern([List<bool>? pattern]) {
     if(pattern != null) _pattern = pattern;
   }
 

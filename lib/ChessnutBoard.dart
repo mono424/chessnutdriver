@@ -10,12 +10,12 @@ import 'package:synchronized/synchronized.dart';
 
 class ChessnutBoard {
   
-  ChessnutCommunicationClient _client;
-  StreamController _inputStreamController;
-  StreamController _boardUpdateStreamController;
-  Stream<ChessnutMessage> _inputStream;
-  Stream<Map<String, String>> _boardUpdateStream;
-  List<int> _buffer;
+  late ChessnutCommunicationClient _client;
+  late StreamController _inputStreamController;
+  late StreamController _boardUpdateStreamController;
+  Stream<ChessnutMessage>? _inputStream;
+  Stream<Map<String, String>>? _boardUpdateStream;
+  List<int>? _buffer;
 
   Map<String, String> _currBoard = Map.fromEntries(ChessnutProtocol.squares.map((e) => MapEntry(e, ChessnutProtocol.pieces[0])));
 
@@ -30,10 +30,10 @@ class ChessnutBoard {
     _client.receiveStream.listen(_handleInputStream);
     _inputStreamController = StreamController<ChessnutMessage>();
     _boardUpdateStreamController = StreamController<Map<String, String>>();
-    _inputStream = _inputStreamController.stream.asBroadcastStream();
-    _boardUpdateStream = _boardUpdateStreamController.stream.asBroadcastStream();
+    _inputStream = _inputStreamController.stream.asBroadcastStream() as Stream<ChessnutMessage>?;
+    _boardUpdateStream = _boardUpdateStreamController.stream.asBroadcastStream() as Stream<Map<String, String>>?;
 
-    getInputStream().map(_createBoardMap).listen(_newBoardState);
+    getInputStream()!.map(_createBoardMap).listen(_newBoardState);
 
     Future<void> ack = getAckFuture();
     _send(Uint8List.fromList([0x21, 0x01, 0x00]));
@@ -53,16 +53,16 @@ class ChessnutBoard {
       if (_buffer == null)
         _buffer = chunk.toList();
       else
-        _buffer.addAll(chunk);
+        _buffer!.addAll(chunk);
 
-      while(_buffer.length > 0) {
+      while(_buffer!.length > 0) {
         try {
-          _buffer = skipToNextStart(0, _buffer);
-          ChessnutMessage message = ChessnutMessage.parse(_buffer);
+          _buffer = skipToNextStart(0, _buffer!);
+          ChessnutMessage message = ChessnutMessage.parse(_buffer!);
           _inputStreamController.add(message);
-          _buffer.removeRange(0, message.length);
+          _buffer!.removeRange(0, message.length);
         } on ChessnutInvalidMessageException catch (e) {
-          _buffer = skipToNextStart(0, _buffer);
+          _buffer = skipToNextStart(0, _buffer!);
           _inputStreamController.addError(e);
         } on ChessnutMessageTooShortException catch (_) {
           break;
@@ -91,11 +91,11 @@ class ChessnutBoard {
     throw Exception("Invalid communication type");
   }
 
-  Stream<ChessnutMessage> getInputStream() {
+  Stream<ChessnutMessage>? getInputStream() {
     return _inputStream;
   }
 
-  Stream<Map<String, String>> getBoardUpdateStream() {
+  Stream<Map<String, String>>? getBoardUpdateStream() {
     return _boardUpdateStream;
   }
 

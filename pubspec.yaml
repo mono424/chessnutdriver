@@ -1,11 +1,11 @@
 name: chessnutdriver
 description: A Chessnut-Chessboard Driver written in pure Dart
-version: 0.0.2
+version: 0.0.3
 repository: https://github.com/mono424/chessnutdriver
 homepage: https://khad.im
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
   synchronized: ^3.0.0+2
